@@ -1,0 +1,30 @@
+{
+    "elf_model_name": "hasco_6",
+    "anchorCnt": 5,
+    "biases": [
+        28, 22,  19, 51,  52, 46, 112, 24,  38, 99,  92, 78, 183, 63, 473, 25,  78,196, 162,129, 276,194, 911, 60, 183,336, 419,371, 1217,193
+    ],
+    "conf_threshold": [
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35",
+        "0.35"
+    ],
+    "input_node": "layer0_conv",
+    "nms_threshold": "0.45",
+    "num_classes": 9,
+    "output_node": [
+        "layer70_conv",
+        "layer60_conv",
+        "layer50_conv"
+    ],
+    "crop_size_left_top_x": 80,
+    "crop_size_left_top_y": 200,
+    "crop_size_width": 1200,
+    "crop_size_height": 520
+}

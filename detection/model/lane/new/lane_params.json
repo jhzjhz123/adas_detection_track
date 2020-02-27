@@ -1,0 +1,9 @@
+{
+    "elf_model_name": "mobilenetv2_seg",
+    "crop_size_left_top_x": 0,
+    "crop_size_left_top_y": 0,
+    "crop_size_width": 1280,
+    "crop_size_height": 540,
+    "input_node": "conv1_convolution",
+    "output_node": ["conv_pw_25_convolution"]
+}

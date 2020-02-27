@@ -1,0 +1,9 @@
+{
+    "elf_model_name": "mhe",
+    "crop_size_left_top_x": 0,
+    "crop_size_left_top_y": 360,
+    "crop_size_width": 1280,
+    "crop_size_height": 360,
+    "input_node": "conv11",
+    "output_node": ["resize0"]
+}

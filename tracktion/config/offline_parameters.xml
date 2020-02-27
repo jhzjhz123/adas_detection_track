@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<items Name="Internal Param">
+    <item Param="CamFocal_x" value="1458">
+        <!--intrinsic_parameter.fx-->
+    </item>
+    <item Param="CamFocal_y" value="1463">
+        <!--intrinsic_parameter.fy-->
+    </item>
+    <item Param="PrincPointC_real_x" value="648">
+        <!--intrinsic_parameter.cx-->
+    </item>
+    <item Param="PrincPointC_real_y" value="229">
+        <!--intrinsic_parameter.cy-->
+    </item>
+    <item Param="DisCoef_k1" value="-0.29080001">
+        <!--intrinsic_parameter.k1-->
+    </item>
+    <item Param="DisCoef_k2" value="-0.052947849">
+        <!--intrinsic_parameter.k2-->
+    </item>
+    <item Param="DisCoef_k3" value="0.83401">
+        <!--intrinsic_parameter.k3-->
+    </item>
+    <item Param="DisCoef_p1" value="0.0026125">
+        <!--intrinsic_parameter.p1-->
+    </item>
+    <item Param="DisCoef_p1" value="0.0092599997">
+        <!--intrinsic_parameter.p2-->
+    </item>
+</items>
+
+<items Name="External Param" remark="From the driver perspective">
+    <!--Eula order: world -> pitch -> yaw -> roll -> camera-->
+    <item Param="pitch" value="4.2" remark="up">
+        <!--extinsic_parameter.camera_pitch_angle-->
+    </item>
+    <item Param="yaw" value="-4.5" remark="right">
+        <!--extinsic_parameter.camera_yaw_angle-->
+    </item>
+    <item Param="roll" value="0.11556819" remark="clockwise">
+        <!--extinsic_parameter.camera_roll_angle-->
+    </item>
+    <item Param="CamHeight" value="1260" unit="mm" remark="">
+        <!--相机高度-->
+    </item>
+    <item Param="Cam2VHDis" value="1640" unit="mm" remark="">
+        <!--相机距离车头的垂直距离-->
+    </item>
+    <item Param="Cam2VMDis" value="-40" unit="mm" remark="+ : left  - : right">
+        <!--相机与车辆中心线的偏离-->
+    </item>
+</items>

@@ -1,0 +1,35 @@
+{
+    "elf_model_name": "yolo",
+    "anchorCnt": 5,
+    "biases": [
+        11, 8, 8, 20, 21, 19, 15, 39, 90, 13, 35, 34, 28, 70, 58, 53, 278, 17, 60, 115, 109, 76, 493, 37, 118, 160, 224, 212, 636, 93
+    ],
+    "conf_threshold": [
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5",
+        "0.5"
+    ],
+    "input_node": "layer0_conv",
+    "nms_threshold": "0.45",
+    "num_classes": 14,
+    "output_node": [
+        "layer102_conv",
+        "layer92_conv",
+        "layer82_conv"
+    ],
+    "crop_size_left_top_x": 0,
+    "crop_size_left_top_y": 0,
+    "crop_size_width": 1280,
+    "crop_size_height": 720
+}

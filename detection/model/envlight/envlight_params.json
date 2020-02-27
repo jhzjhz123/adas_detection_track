@@ -1,0 +1,9 @@
+{
+    "elf_model_name": "mobilenetv2_0",
+    "crop_size_left_top_x": 0,
+    "crop_size_left_top_y": 0,
+    "crop_size_width": 1280,
+    "crop_size_height": 300,
+    "input_node": "263",
+    "output_node": "412"
+}

@@ -1,0 +1,15 @@
+focal x direction: 1458
+focal y direction: 1463
+center pixel x : 648
+center pixel y : 229
+Distortion Coeff1:-0.2908
+Distortion Coeff2:-0.05294785
+Distortion Coeff3:0.0026125
+Distortion Coeff4:0.00926
+Distortion Coeff5:0.83401
+Pitch:-2.032
+Yaw:5.05136
+Roll:2.94674
+Cam2Chamber: 1680
+Cam2Center:150
+CamHeight:1570
