@@ -6,7 +6,7 @@
 #include <fstream>
 #include <opencv2/opencv.hpp>
 
-#define TIME_COUNT
+// #define TIME_COUNT
 #ifdef TIME_COUNT
 #include <chrono>
 #endif

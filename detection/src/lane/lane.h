@@ -9,6 +9,9 @@
 
 #define HWC 1
 #define CHW 0
+#define MERGED_RES_MAT
+// #define MULTI_CHANNEL_RES_MAT
+#define NEON_NORM
 
 struct LaneInputData{
     char *elf_model_name;
@@ -36,6 +39,7 @@ private:
 
     DPUKernel* lane_kernel;
     DPUTask* lane_task;
+    DPUTensor *input_tensor, *output_tensor;
     cv::Mat img_init, img_input, img_post;
     LaneInputData lane_params;
     std::vector<std::string> paramSet = {"elf_model_name",
@@ -56,10 +60,16 @@ private:
     int8_t* output_data;
     cv::Mat lane_mat;
 
-    float mean[3] = {0.f, 0.f, 0.f};
-    // float mean[3] = {103.939f, 116.779f, 123.68f};
+    // float mean[3] = {103.939, 116.779, 123.68}; // 20200304
+    float mean[3] = {46.18, 47.61, 48.78}; // 20200313
+    // float mean[3] = {47.61, 47.61, 47.61}; // 20200313
 
     unsigned long time1, time2;
+
+    #define channels_num 5
+    uint8_t colorB[channels_num] = {128, 232, 70, 156, 153};
+    uint8_t colorG[channels_num] = {64, 35, 70, 102, 153};
+    uint8_t colorR[channels_num] = {128, 244, 70, 102, 190};
 };
 
 #endif

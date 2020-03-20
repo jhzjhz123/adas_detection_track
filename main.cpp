@@ -59,12 +59,12 @@ HV_S32 test_ldw_image(HV_S32 argc, char *argv[])
 	HV_HANDLE * phLaneDet = new HV_HANDLE;
 	lane_api.Init(phLaneDet, &pUserData);
     
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/lane/he/0115/lane_params.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/lane/he/0115/lane_params.json";
     string basePath;
     #if(YUV420OPEN)
-	    basePath = "../test/images/yuv/";
+	    basePath = "images/yuv/";
     #else
-        basePath = "../test/images/rgb/";
+        basePath = "images/rgb/";
     #endif
     vector<string> images;
     ListImages(basePath, images);
@@ -212,7 +212,7 @@ HV_S32 test_ldw_video(HV_S32 argc, char *argv[])
 	/*ofstream a0_txt;
 	a0_txt.open("E:\\111.txt");*/
 
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/lane/he/0115/lane_params.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/lane/he/0115/lane_params.json";
 	vector<string> file_name = {"test/video/20191231/tianjin/test_1.ts"};//get_files("E:\\video\\cnn\\fine");
 	string out_folder = "E:\\video\\cnn\\111\\";
 	HV_S32 start_file_num = 0;
@@ -348,10 +348,10 @@ float maxTireAngle = 29.6;
 float maxStirAngle = 540;
 
 void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
     YoLoProcess yolo_processor(params_file.c_str());
     
-    std::string config_file = "../tracktion/config/offline_parameters.xml";
+    std::string config_file = "tracktion/config/offline_parameters.xml";
 
 #ifdef DISTANCEMEASURE
     ObjectEstimation Obj_Esti(fx, fy, cx, cy , k1, k2, p1, p2, k3, pitch, yaw, roll, Cam2Chamber, Cam2Center, CamHeight);
@@ -361,7 +361,7 @@ void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
 
     Obj_Esti.set_moveThreshold(7.5, 0.65);
 
-	std::ifstream inputfile("../tracktion/config/vehicle_status_log.txt", std::ios::in);
+	std::ifstream inputfile("tracktion/config/vehicle_status_log.txt", std::ios::in);
 
 	DrivingPathEstimation driving_path_estimatin(L, K, maxTireAngle, maxStirAngle);
 
@@ -439,7 +439,7 @@ void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
 }
 
 void test_obj_all(int argc, char* argv[]){
-    std::string Video_Input = argc==3 ? argv[2] : "../test/video/20191231/tianjin/test_1.ts";
+    std::string Video_Input = argc==3 ? argv[2] : "video/20191231/tianjin/test_1.ts";
 
     cv::VideoCapture cap(Video_Input);
     if (!cap.isOpened())
@@ -450,12 +450,12 @@ void test_obj_all(int argc, char* argv[]){
 }
 
 void test_yolo(int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
     string basePath;
     #if(YUV420OPEN)
-	    basePath = "../test/images/yuv/";
+	    basePath = "images/yuv/";
     #else
-        basePath = "../test/images/rgb/";
+        basePath = "images/rgb/";
     #endif
     vector<string> images;
     ListImages(basePath, images);
@@ -516,12 +516,12 @@ void test_yolo(int argc, char* argv[]){
 }
 
 void test_envlight(int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/envlight_params.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/envlight_params.json";
     string basePath;
     #if(YUV420OPEN)
-	    basePath = "../test/images/yuv/";
+	    basePath = "images/yuv/";
     #else
-        basePath = "../test/images/rgb/";
+        basePath = "images/rgb/";
     #endif
     vector<string> images;
     ListImages(basePath, images);
@@ -581,12 +581,12 @@ void test_envlight(int argc, char* argv[]){
 }
 
 void test_lane(int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "../detection/model/lane/he/lane_params.json";
+    std::string params_file = argc==2 ? argv[1] : "detection/model/lane/he/lane_params.json";
     string basePath;
     #if(YUV420OPEN)
-	    basePath = "../test/images/yuv/";
+	    basePath = "images/yuv/";
     #else
-        basePath = "../test/images/images_prepped_test/";
+        basePath = "images/images_prepped_test/";
     #endif
     vector<string> images;
     ListImages(basePath, images);

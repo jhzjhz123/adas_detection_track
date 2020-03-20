@@ -39,11 +39,21 @@ cv::Mat LaneProcess::GetResult(){
     std::cout << "dpuRunTask:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
     #endif
     
-    output_width = dpuGetOutputTensorWidth(lane_task, lane_params.output_node[0]);
-    output_height = dpuGetOutputTensorHeight(lane_task, lane_params.output_node[0]);
+    output_width   = dpuGetOutputTensorWidth(lane_task, lane_params.output_node[0]);
+    output_height  = dpuGetOutputTensorHeight(lane_task, lane_params.output_node[0]);
     output_channel = dpuGetOutputTensorChannel(lane_task, lane_params.output_node[0]);
-    output_size = dpuGetOutputTensorSize(lane_task, lane_params.output_node[0]);
-    output_scale = dpuGetOutputTensorScale(lane_task, lane_params.output_node[0]);
+    output_size    = dpuGetOutputTensorSize(lane_task, lane_params.output_node[0]);
+    output_scale   = dpuGetOutputTensorScale(lane_task, lane_params.output_node[0]);
+    output_data    = dpuGetOutputTensorAddress(lane_task, lane_params.output_node[0]);
+    
+    // output_tensor  = dpuGetOutputTensor(lane_task, lane_params.output_node[0]);
+    // output_width   = dpuGetTensorWidth(output_tensor);
+    // output_height  = dpuGetTensorHeight(output_tensor);
+    // output_channel = dpuGetTensorChannel(output_tensor);
+    // output_size    = dpuGetTensorSize(output_tensor);
+    // output_scale   = dpuGetTensorScale(output_tensor);
+    // output_data    = dpuGetTensorAddress(output_tensor);
+
     #ifdef DEBUG_INFO
     std::cout << "output_width: " << output_width << std::endl;
     std::cout << "output_height: " << output_height << std::endl;
@@ -55,19 +65,27 @@ cv::Mat LaneProcess::GetResult(){
     #ifdef TIME_COUNT
     time1 = get_current_time();
     #endif
-    lane_mat = cv::Mat::zeros(cv::Size(output_width, output_height), CV_8UC1); 
+
+    #ifdef MULTI_CHANNEL_RES_MAT
+    lane_mat = cv::Mat::zeros(output_height, output_width, CV_8UC3); // 3通道存储
+    #else
+    lane_mat = cv::Mat::zeros(cv::Size(output_width, output_height), CV_8UC1); // 单通道存储
+    #endif
 
     #if HWC
-    output_data = dpuGetOutputTensorAddress(lane_task, lane_params.output_node[0]);
 
-    // for (int row = 0; row < output_height; row++) { //method1
-    //     for (int col = 0; col < output_width; col++) {
-    //         int i = row * output_width * output_channel + col * output_channel;
-    //         auto max_p = max_element(output_data + i, output_data + i + output_channel);
-    //         int max_c = distance(output_data + i, max_p);
-    //         lane_mat.at<uchar>(row, col) = (uchar)(max_c);
-    //     }
-    // }
+    for (int h = 0; h < output_height; ++h) { //method1
+        for (int w = 0; w < output_width; ++w) {
+            int i = h * output_width * output_channel + w * output_channel;
+            auto max_p = max_element(output_data + i, output_data + i + output_channel);
+            int max_c = distance(output_data + i, max_p);
+            #ifdef MULTI_CHANNEL_RES_MAT
+            lane_mat.at<cv::Vec3b>(h, w) = cv::Vec3b(colorB[max_c], colorG[max_c], colorR[max_c]);
+            #else
+            lane_mat.at<uchar>(h, w) = (uchar)(max_c);
+            #endif
+        }
+    }
 
     for(int i = 0; i < output_size; i += output_channel){
         int location = i/output_channel;
@@ -90,8 +108,13 @@ cv::Mat LaneProcess::GetResult(){
         auto max_p = max_element(curr_p, curr_p + output_channel);
         int max_c = distance(curr_p, max_p);
         
+        #ifdef MULTI_CHANNEL_RES_MAT
+        lane_mat.at<cv::Vec3b>(h, w) = cv::Vec3b(colorB[max_c], colorG[max_c], colorR[max_c]);
+        #else
         lane_mat.at<uchar>(h,w) = (uchar)(max_c);
+        #endif
     }
+
     #elif CHW
     output_data = new int8_t[output_size]; //method4
     dpuGetOutputTensorInCHWInt8(lane_task, lane_params.output_node[0], output_data, output_size);
@@ -117,40 +140,71 @@ cv::Mat LaneProcess::GetResult(){
     std::cout << "get map:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
     #endif
 
-    // resize(lane_mat, lane_mat, cv::Size(lane_params.crop_size_width, lane_params.crop_size_height));
-    // lane_mat *= 255;
+    #ifdef MERGED_RES_MAT
+
+    resize(lane_mat, lane_mat, cv::Size(lane_params.crop_size_width, lane_params.crop_size_height));
     
-    // cv::Mat seg_res = cv::Mat::zeros(img_post.size(), CV_8UC1);
-    // lane_mat.copyTo(seg_res(cv::Rect(0, lane_params.crop_size_left_top_y, lane_mat.cols, lane_mat.rows)));
+    #ifdef MULTI_CHANNEL_RES_MAT
+    cv::Mat seg3_res = cv::Mat::zeros(img_post.size(), CV_8UC3);
+    lane_mat.copyTo(seg3_res(cv::Rect(0, lane_params.crop_size_left_top_y, lane_mat.cols, lane_mat.rows)));
+    
+    for (int i = 0; i < img_post.rows * img_post.cols * 3; i++) {
+      img_post.data[i] = img_post.data[i] * 0.4 + seg3_res.data[i] * 0.6;
+    }
 
-    // cv::Mat seg3_res= convertTo3Channels(seg_res);
+    #else
 
-    // for (auto h = 0; h < img_post.size().height; ++h) {
-    //     for (auto w = 0; w < img_post.size().width; ++w) {
-    //         img_post.at<cv::Vec3b>(h, w) = img_post.at<cv::Vec3b>(h, w) * 0.5 + seg3_res.at<cv::Vec3b>(h, w) * 0.5;
-    //     }
-    // }
+    lane_mat *= 255;
 
+    cv::Mat seg_res = cv::Mat::zeros(img_post.size(), CV_8UC1);
+    lane_mat.copyTo(seg_res(cv::Rect(0, lane_params.crop_size_left_top_y, lane_mat.cols, lane_mat.rows)));
+
+    cv::Mat seg3_res= convertTo3Channels(seg_res);
+
+    for (auto h = 0; h < img_post.size().height; ++h) {
+        for (auto w = 0; w < img_post.size().width; ++w) {
+            img_post.at<cv::Vec3b>(h, w) = img_post.at<cv::Vec3b>(h, w) * 0.4 + seg3_res.at<cv::Vec3b>(h, w) * 0.6;
+        }
+    }
+
+    #endif
+
+    return img_post;
+    #else
     return lane_mat;
+    #endif
 }
 
 void LaneProcess::PostProcess(std::string imagename){
+    #ifdef MERGED_RES_MAT
     imwrite("images/results/" + imagename + "_" + medstr + "_result.jpg", img_post, {CV_IMWRITE_JPEG_QUALITY, 100});
+    #else
+    imwrite("images/results/" + imagename + "_" + medstr + "_result.jpg", lane_mat, {CV_IMWRITE_JPEG_QUALITY, 100});
+    #endif
 }
 
 cv::Mat LaneProcess::thread_func(cv::Mat& img){
     PreProcess(img);
-    cv::Mat mat_result = GetResult();
-    return mat_result;
+    cv::Mat res_mat = GetResult();
+    return res_mat;
 }
 
 void LaneProcess::setInputImageForLane(){
-    input_width = dpuGetInputTensorWidth(lane_task, lane_params.input_node);
-    input_height = dpuGetInputTensorHeight(lane_task, lane_params.input_node);
+    input_width   = dpuGetInputTensorWidth(lane_task, lane_params.input_node);
+    input_height  = dpuGetInputTensorHeight(lane_task, lane_params.input_node);
     input_channel = dpuGetInputTensorChannel(lane_task, lane_params.input_node);
-    input_size = dpuGetInputTensorSize(lane_task, lane_params.input_node);
-    input_scale = dpuGetInputTensorScale(lane_task, lane_params.input_node);
-    input_data = dpuGetInputTensorAddress(lane_task, lane_params.input_node);
+    input_size    = dpuGetInputTensorSize(lane_task, lane_params.input_node);
+    input_scale   = dpuGetInputTensorScale(lane_task, lane_params.input_node);
+    input_data    = dpuGetInputTensorAddress(lane_task, lane_params.input_node);
+
+    // input_tensor  = dpuGetInputTensor(lane_task, lane_params.input_node); // another API
+    // input_width   = dpuGetTensorWidth(input_tensor);
+    // input_height  = dpuGetTensorHeight(input_tensor);
+    // input_channel = dpuGetTensorChannel(input_tensor);
+    // input_size    = dpuGetTensorSize(input_tensor);
+    // input_scale   = dpuGetTensorScale(input_tensor);
+    // input_data    = dpuGetTensorAddress(input_tensor);
+
     #ifdef DEBUG_INFO
     std::cout << "input_width: " << input_width << std::endl;
     std::cout << "input_height: " << input_height << std::endl;
@@ -178,25 +232,32 @@ void LaneProcess::setInputImageForLane(){
 
     time1 = get_current_time();
     #endif
-    img_input -= 128;
+
+    #ifdef NEON_NORM
+
+    // // img_input -= 128;
+    // cv::subtract(img_input, cv::Scalar(mean[0], mean[1], mean[2]), img_input); // 导致精度下降
+    neon_norm(img_input.data, input_data, input_size, mean, input_scale);
     #ifdef TIME_COUNT
     time2 = get_current_time();
-    std::cout << "-128:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
+    std::cout << "neon_norm:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
 
     time1 = get_current_time();
     #endif
-    #if 1
-    memcpy(input_data, img_input.data, input_size);
-    #ifdef TIME_COUNT
-    time2 = get_current_time();
-    std::cout << "memcpy:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
-    #endif
+    // memcpy(input_data, img_input.data, input_size);
+    // #ifdef TIME_COUNT
+    // time2 = get_current_time();
+    // std::cout << "memcpy:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
+    // #endif
+
     #else
+
     dpuSetInputImageWithScale(lane_task, lane_params.input_node, img_input, mean, 1.f);
     #ifdef TIME_COUNT
     time2 = get_current_time();
-    std::cout << "dpuSetInputImageWithScale:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
+    std::cout << "dpu_norm:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
     #endif
+
     #endif
 }
 

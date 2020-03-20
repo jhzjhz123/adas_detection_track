@@ -263,7 +263,7 @@ void YoLoProcess::setInputImageForYOLO() {
     #endif
     #endif
 
-    #if USER_DEFINE
+    #if USER_SCALE
     input_scale /= 255.f;
 
     #ifdef TIME_COUNT
@@ -275,21 +275,25 @@ void YoLoProcess::setInputImageForYOLO() {
     // cv::Mat image; // opencv method2
     // img_input.convertTo(image, CV_8UC3, input_scale);
 
-    // for(int i = input_size-1; i >= 0; --i) // my method1
-    //     img_input.data[i] *= input_scale;   
+    // for(int i = input_size-1; i >= 0; --i){ // 4.2ms
+    //     // img_input.data[i] *= input_scale;  // not process x = x... format, will cause slow
+    //     data[i] = (int8_t)img_input.data[i] * input_scale;   
+    // }
 
-    // for(int i = input_size-1; i >= 0; --i) // my method2
-    //     data[i] = ImgScaleMatrix[img_input.data[i]];
+    for(int i = input_size-1; i >= 0; --i) // 11.6ms
+        data[i] = ImgScaleMatrix[img_input.data[i]];
 
-    for(int i = input_size-1; i >= 0; --i) // my method3
-        img_input.data[i] = (img_input.data[i] >> 2);
+    // for(int i = input_size-1; i >= 0; --i){ // 1.4ms
+    //     // img_input.data[i] = (img_input.data[i] >> 2); // not process x = x... format, will cause slow
+    //     data[i] = (int8_t)(img_input.data[i] >> 2);
+    // }
 
     #ifdef TIME_COUNT
     time2 = get_current_time();
-    std::cout << "scale:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
+    std::cout << "USER_SCALE:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
     #endif
 
-    memcpy(input_data, img_input.data, input_size);
+    memcpy(input_data, data, input_size);
 
     #elif DPU_SCALE
 
@@ -302,10 +306,10 @@ void YoLoProcess::setInputImageForYOLO() {
     #ifdef TIME_COUNT
     auto pre_out_time = chrono::system_clock::now();
     auto pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
-    std::cout << "dpuSetInputImageWithScale: " << pre_duration /1000. << "ms" << std::endl;
+    std::cout << "DPU_SCALE: " << pre_duration /1000. << "ms" << std::endl;
     #endif
 
-    #elif MY_SCALER
+    #elif NET_SCALER
     sinput_width = dpuGetInputTensorWidth(scaler_task, sinput_node.c_str());
     sinput_height = dpuGetInputTensorHeight(scaler_task, sinput_node.c_str());
     sinput_channel = dpuGetInputTensorChannel(scaler_task, sinput_node.c_str());
@@ -330,7 +334,7 @@ void YoLoProcess::setInputImageForYOLO() {
     #ifdef TIME_COUNT
     auto pre_out_time = chrono::system_clock::now();
     auto pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
-    std::cout << "scaler.GetReults(): " << pre_duration /1000. << "ms" << std::endl;
+    std::cout << "NET_SCALER: " << pre_duration /1000. << "ms" << std::endl;
     #endif
 
     soutput_width = dpuGetOutputTensorWidth(scaler_task, soutput_node.c_str());
@@ -350,7 +354,7 @@ void YoLoProcess::setInputImageForYOLO() {
 
     memcpy(input_data, soutput_data, input_size);
 
-    #elif MULTI_THREAD_SCALE
+    #elif MULTI_THREADS_SCALE
     
     #ifdef TIME_COUNT
     auto pre_in_time = chrono::system_clock::now();
@@ -372,15 +376,15 @@ void YoLoProcess::setInputImageForYOLO() {
 	{
 		pthread_join(pt[i], NULL);
 	}
-	cv::Mat dest = catImage(v, type);
+	cv::Mat dst = catImage(v, type);
 
     #ifdef TIME_COUNT
     auto pre_out_time = chrono::system_clock::now();
     auto pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
-    std::cout << "multi-threads scale: " << pre_duration /1000. << "ms" << std::endl;
+    std::cout << "MULTI_THREAD_SCALE: " << pre_duration /1000. << "ms" << std::endl;
     #endif
 
-    memcpy(input_data, dest.data, input_size);
+    memcpy(input_data, dst.data, input_size);
     #endif
 
     #if ARM_NEON_SCALE
@@ -401,19 +405,271 @@ void YoLoProcess::setInputImageForYOLO() {
     //     vst1q_f32(output_data_ + i, regout);
     // }
 
-    // method2
-    uint8_t* output_data_ = reinterpret_cast<uint8_t*>(malloc(sizeof(uint8_t) * input_size));
-    uint8x16_t regin, regout;
-    for(int i = 0; i < input_size; i += 16){
-        regin = vld1q_u8(img_input.data + i);
-        regout = vshrq_n_u8(regin, 2);
-        vst1q_u8(output_data_ + i, regout);
+    // // method2-neon intrinsic 1.0ms with neon_memcpy 1.0ms preprocess 5.0ms
+    // uint8_t* output_data_ = reinterpret_cast<uint8_t*>(malloc(sizeof(uint8_t) * input_size));
+    // uint8x16_t regin, regout;
+    // int i;
+    // int cnt = input_size - (input_size % 16);
+    // for(i = 0; i < cnt; i += 16){
+    //     regin = vld1q_u8(img_input.data + i);
+    //     regout = vshrq_n_u8(regin, 2);
+    //     vst1q_u8(output_data_ + i, regout);
+    // }
+    // for( ; i < input_size; ++i){
+    //     output_data_[i] = (img_input.data[i] >> 2);
+    // }
+
+    // // method2-neon assembly 0.9ms
+    // uint8_t* output_data_ = reinterpret_cast<uint8_t*>(malloc(sizeof(uint8_t) * input_size));
+    // int i = 0;
+    // int remained = input_size & 15;
+    // int cnt = input_size - remained;
+
+    // __asm__ __volatile__(
+    //     "1:                             \n\t"
+    //     "ldr q0, [%1, %2]               \n\t"
+    //     "ushr v0.16b, v0.16b, #2        \n\t"
+    //     "str q0, [%0, %2]               \n\t"
+    //     "add %2, %2, #16                \n\t"
+    //     "cmp %2, %3                     \n\t"
+    //     "bne 1b                         \n\t"
+    //     : "=r"(output_data_), "=r"(img_input.data), "=r"(i), "=r"(cnt)
+    //     : "0"(output_data_), "1"(img_input.data), "2"(i), "3"(cnt)
+    //     : "memory", "q0", "cc"
+    // );
+
+    // while(remained--){
+    //     *output_data_++ = (*img_input.data++ >> 2);
+    // }
+
+    // // method3-neon intrinsic 1.1ms without neon_memcpy preprocess 2.8ms
+    // uint8x16_t regin;
+    // int8x16_t regout;
+    // int i;
+    // int cnt = input_size - (input_size % 16);
+    // for(i = 0; i < cnt; i += 16){
+    //     regin = vld1q_u8(img_input.data + i);
+    //     regout = vreinterpretq_s8_u8(vshrq_n_u8(regin, 2));
+    //     vst1q_s8(input_data + i, regout);
+    // }
+    // for( ; i < input_size; ++i){
+    //     input_data[i] = ((int8_t)(*img_input.data++) >> 2);
+    // }
+
+
+    // // method3-neon assembly 
+    // int remained = input_size % 16;
+    // int cnt = input_size - remained;
+    // __asm__ __volatile__(
+    //     "1:                        \n\t"
+    //     "ld1 {v0.16b}, [%0], #16   \n\t"
+    //     "subs %w2, %w2, #16        \n\t" // 16 processed per loop
+    //     "sshr v0.16b, V0.16b, #2   \n\t"
+    //     "st1 {v0.16b}, [%1], #16   \n\t"
+    //     "b.gt 1b"
+    //     : "+r"((int8_t*)img_input.data),  // %0
+    //       "+r"(input_data),               // %1
+    //       "+r"(cnt)                       // %2 
+    //     :
+    //     : "v0", "memory", "cc"            // Clobber List
+    // );
+    // while(remained--){
+    //     *input_data++ = ((int8_t)(*img_input.data++) >> 2);
+    // }
+
+    // method4-neon intrinsic 8.6ms uint8->uint16->uint32->float32->做乘法处理->float32->uint32->uint16->uint8->int8
+    // float32_t s = input_scale/255.;
+    // int i;
+    // int cnt = input_size - (input_size % 8);
+    // for(i = 0; i < cnt; i += 8){
+    //     uint8x8_t  regin8         = vld1_u8(img_input.data + i);         // LD1 {Vt.8B},[Xn] 
+    //     uint16x8_t regin16        = vmovl_u8(regin8);                    // USHLL Vd.8H,Vn.8B,#0
+
+    //     uint16x4_t  regin16_low   = vget_low_u16(regin16);               // DUP Vd.1D,Vn.D[0]
+    //     uint16x4_t  regin16_high  = vget_high_u16(regin16);              // DUP Vd.1D,Vn.D[1]    
+
+    //     uint32x4_t  regin32_low   = vmovl_u16(regin16_low);              // 宽指令，将16位扩展为32位 USHLL Vd.4S,Vn.4H,#0
+    //     float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low);          // 将int转换为float UCVTF Vd.4S,Vn.4S
+    //     float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);        //  FMUL Vd.4S,Vn.4S,Vm.S[0]
+    //     uint32x4_t  res32_low     = vcvtq_u32_f32(res32f_low);           // 将float转换为int FCVTZU Vd.4S,Vn.4S
+    //     uint16x4_t  res16_low     = vqmovn_u32(res32_low);               // 窄指令，32位变为16位 UQXTN Vd.4H,Vn.4S
+
+    //     uint32x4_t  regin32_high  = vmovl_u16(regin16_high);             // USHLL Vd.4S,Vn.4H,#0
+    //     float32x4_t regin32f_high = vcvtq_f32_u32(regin32_high);         // UCVTF Vd.4S,Vn.4S
+    //     float32x4_t res32f_high   = vmulq_n_f32(regin32f_high, s);       // FMUL Vd.4S,Vn.4S,Vm.S[0]
+    //     uint32x4_t  res32_high    = vcvtq_u32_f32(res32f_high);          // FCVTZU Vd.4S,Vn.4S
+    //     uint16x4_t  res16_high    = vqmovn_u32(res32_high);              // UQXTN Vd.4H,Vn.4S
+
+    //     uint16x8_t  res16         = vcombine_u16(res16_low, res16_high); // DUP Vd.1D,Vn.D[0]    INS Vd.D[1],Vm.D[0]
+    //     uint8x8_t   res8          = vqmovn_u16(res16);                   // UQXTN Vd.8B,Vn.8H
+    //     int8x8_t    result        = vreinterpret_s8_u8(res8);
+
+    //     vst1_s8(input_data + i, result);                                 // ST1 {Vt.8B},[Xn]
+    // }
+
+    // for( ; i < input_size; ++i){
+    //     input_data[i] = img_input.data[i] * s;
+    // }
+
+    // // method4-neon assembly 7.8ms
+    // float s = input_scale/255.f;
+    // int i = 0;
+    // int cnt = input_size - (input_size % 8);
+    // __asm__ __volatile__(
+    //     "dup v3.4s, %w2               \n\t"
+    //     "1:                           \n\t"
+
+    //     "ld1 {v0.8b}, [%1], #8        \n\t"
+    //     "ushll v0.8h,v0.8b,#0         \n\t"
+
+    //     "dup d1, v0.d[0]              \n\t"
+    //     "ushll v1.4s,v1.4h,#0         \n\t"
+    //     "ucvtf v1.4s, v1.4s           \n\t"
+        
+    //     "dup d0, v0.d[1]              \n\t"
+    //     "ushll v0.4s, v0.4h,#0        \n\t"
+    //     "ucvtf v0.4s, v0.4s           \n\t"
+
+    //     "fmul v1.4s, v1.4s, v3.4s     \n\t"
+    //     "fmul v0.4s, v0.4s, v3.4s     \n\t"
+
+    //     "fcvtzu v1.4s, v1.4s          \n\t"
+    //     "fcvtzu v0.4s, v0.4s          \n\t"
+
+    //     "uqxtn v1.4h, v1.4s           \n\t"
+    //     "uqxtn v0.4h, v0.4s           \n\t"
+
+    //     "dup d2, v1.d[0]              \n\t"
+    //     "ins v2.d[1], v0.d[0]         \n\t"
+    //     "uqxtn v0.8b, v2.8h           \n\t"
+
+    //     "st1 {v0.8b}, [%0], #8        \n\t"
+
+    //     // "add %3, %3, #8               \n\t"
+    //     // "cmp %3, %4                   \n\t"
+    //     // "bne 1b                       \n\t"
+    //     "subs %4, %4, #8              \n\t"
+    //     "bgt 1b                       \n\t"
+        
+    //     : "=r"(input_data), "=r"(img_input.data), "=r"(s), "=r"(i), "=r"(cnt)
+    //     : "0"(input_data), "1"(img_input.data), "2"(s), "3"(i), "4"(cnt)
+    //     : "memory", "cc", "v0", "v1", "v2", "v3", "v4", "d0", "d1", "d2", "s4"
+    // );
+
+    // method5-neon intrinsic 8.7ms uint8->uint16->uint32->float32->做乘法处理->float32->int32->int16->int8
+    float32_t s = input_scale/255.;
+    int i;
+    int cnt = input_size - (input_size % 8);
+    for(i = 0; i < cnt; i += 8){
+        uint8x8_t   regin8        = vld1_u8(img_input.data + i);
+        uint16x8_t  regin16       = vmovl_u8(regin8);
+
+        uint16x4_t  regin16_low   = vget_low_u16(regin16);
+        uint16x4_t  regin16_high  = vget_high_u16(regin16);
+
+        uint32x4_t  regin32_low   = vmovl_u16(regin16_low);     // 宽指令，将16位扩展为32位
+        float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low); // 将int转换为float
+        float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);
+        int32x4_t   res32_low     = vcvtq_s32_f32(res32f_low);  // 将float转换为int
+        int16x4_t   res16_low     = vqmovn_s32(res32_low);      // 窄指令，32位变为16位
+
+        uint32x4_t  regin32_high  = vmovl_u16(regin16_high);
+        float32x4_t regin32f_high = vcvtq_f32_u32(regin32_high);
+        float32x4_t res32f_high   = vmulq_n_f32(regin32f_high, s);
+        int32x4_t   res32_high    = vcvtq_s32_f32(res32f_high);
+        int16x4_t   res16_high    = vqmovn_s32(res32_high);
+
+        int16x8_t   res16         = vcombine_s16(res16_low, res16_high);
+        int8x8_t    res8          = vqmovn_s16(res16);
+
+        vst1_s8(input_data + i, res8);
     }
+    for( ; i < input_size; ++i){
+        input_data[i] = img_input.data[i] * s;
+    }
+
+    // // method5-neon assembly7.9ms
+    // float s = input_scale/255.f;
+    // int i = 0;
+    // int cnt = input_size - (input_size & 7);
+    // __asm__ __volatile__(
+    //     "dup v3.4s, %w2           \n\t"
+    //     "1:                       \n\t"
+
+    //     "ldr d0, [%1], #8         \n\t"
+    //     "ushll v0.8h, v0.8b, #0   \n\t"
+
+    //     "dup d1, v0.d[0]          \n\t"
+    //     "ushll v1.4s, v1.4h, #0   \n\t"
+    //     "ucvtf v1.4s, v1.4s       \n\t"
+
+    //     "dup d0, v0.d[1]          \n\t"
+    //     "ushll v0.4s, v0.4h, #0   \n\t"
+    //     "ucvtf v0.4s, v0.4s       \n\t"
+
+    //     "fmul v1.4s, v1.4s, v3.4s \n\t"
+    //     "fmul v0.4s, v0.4s, v3.4s \n\t"
+
+    //     "fcvtzs v1.4s, v1.4s      \n\t"
+    //     "fcvtzs v0.4s, v0.4s      \n\t"
+
+    //     "sqxtn v1.4h, v1.4s       \n\t"
+    //     "sqxtn v0.4h, v0.4s       \n\t"
+
+    //     "dup d2, v1.d[0]          \n\t"
+    //     "ins v2.d[1], v0.d[0]     \n\t"
+    //     "sqxtn v0.8b, v2.8h       \n\t"
+
+    //     "str d0, [%0], #8         \n\t"
+        
+    //     // "add %3, %3, #8  \n\t"
+    //     // "cmp %3, %4      \n\t"
+    //     // "bne 1b          \n\t"
+    //     "subs %4, %4, #8 \n\t"
+    //     "bgt 1b          \n\t"
+    //     : "=r"(input_data), "=r"(img_input.data), "=r"(s), "=r"(i), "=r"(cnt)
+    //     : "0"(input_data), "1"(img_input.data), "2"(s), "3"(i), "4"(cnt)
+    //     : "memory", "cc"
+    // );
+
+    // // method6-neon intrinsic uint8->uint16->float16->做乘法处理->float16->uint16->uint8->int8
+    // float16_t s = input_scale/255.f;
+    // int i = 0;
+    // int cnt = input_size - (input_size & 7);
+    // for( ; i < cnt; i += 16){
+    //     uint8x16_t in_u8 = vld1q_u8(img_input.data + i);
+
+    //     uint8x8_t in_u8_low = vget_low_u8(in_u8);
+    //     uint8x8_t in8_u8_high = vget_high_u8(in_u8);
+
+    //     uint16x8_t in_u16_low = vmovl_u8(in_u8_low);
+    //     uint16x8_t in_u16_high = vmovl_u8(in8_u8_high);
+
+    //     float16x8_t in_f16_low = vcvtq_f16_u16(in_u16_low);
+    //     float16x8_t in_f16_high = vcvtq_f16_u16(in_u16_high);
+
+    //     float16x8_t out_f16_low = vmulq_n_f16(in_f16_low, s);
+    //     float16x8_t out_f16_high = vmulq_n_f16(in_f16_high, s);
+
+    //     int16x8_t out_s16_low = vcvtq_s16_f16(out_f16_low);
+    //     int16x8_t out_s16_high = vcvtq_s16_f16(out_f16_high);
+
+    //     int8x8_t out_s8_low = vqmovn_s16(out_s16_low);
+    //     int8x8_t out_s8_high = vqmovn_s16(out_s16_high);
+
+    //     int8x16_t out_s8 = vcombine_s8(out_s8_low, out_s8_high);
+
+    //     vst1q_s8(input_data + i, out_s8);
+    // }
+
+    // // method7 my-neon_norm
+    // float s = input_scale/255.f;
+    // neon_norm(img_input.data, input_data, input_size, mean, s);
 
     #ifdef TIME_COUNT
     auto pre_out_time = chrono::system_clock::now();
     auto pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
-    std::cout << "ARM_NEON: " << pre_duration /1000. << "ms" << std::endl;
+    std::cout << "ARM_NEON_SCALE: " << pre_duration /1000. << "ms" << std::endl;
     #endif
 
     // cv::Mat out_tmp = cv::Mat::zeros(cv::Size(input_width, input_height), CV_8UC3);
@@ -432,7 +688,13 @@ void YoLoProcess::setInputImageForYOLO() {
 
     // imwrite("out_tmp.jpg", out_tmp);
 
-    memcpy(input_data, reinterpret_cast<int8_t*>(output_data_), input_size); 
+    // pre_in_time = chrono::system_clock::now();
+    // // memcpy(input_data, reinterpret_cast<int8_t*>(output_data_), input_size); 
+    // // fast_memcpy(input_data, reinterpret_cast<int8_t*>(output_data_), input_size);
+    // neon_memcpy(input_data, reinterpret_cast<int8_t*>(output_data_), input_size);
+    // pre_out_time = chrono::system_clock::now();
+    // pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
+    // std::cout << "neon_memcpy: " << pre_duration /1000. << "ms" << std::endl;
 
     #endif
 }

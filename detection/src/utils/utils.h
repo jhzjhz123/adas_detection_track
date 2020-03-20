@@ -16,6 +16,7 @@
 #include <thread>
 #include <mutex>
 #include <future>
+#include <arm_neon.h>
 
 // #define USE_RESIZE
 // #define DEBUG_INFO
@@ -24,7 +25,7 @@
 using namespace std;
 using namespace cv;
 
-#define YUV420OPEN 1
+#define YUV420OPEN 0
 static std::string medstr = "meyuv";
 
 unsigned long get_current_time(void);
@@ -41,5 +42,8 @@ void CPUCalcSoftmax(const float *data, size_t size, float *result);
 Mat convertTo3Channels(const Mat& binImg);
 vector<cv::Mat> splitImage(cv::Mat image, int num, int type);
 cv::Mat catImage(vector<cv::Mat> v, int type);
+void* fast_memcpy(void *dst, const void *src, size_t sz);
+void neon_memcpy(int8_t* dst, int8_t* src, int len);
+void neon_norm(uint8_t* src, int8_t* dst, int len, float* mean, float scale);
 
 #endif

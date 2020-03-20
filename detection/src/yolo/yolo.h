@@ -6,12 +6,11 @@
 #include "json11/json11.hpp"
 #include <chrono>
 #include "opencv2/core/core.hpp"
-#include <arm_neon.h>
 
-#define USER_DEFINE 0
+#define USER_SCALE 0
 #define DPU_SCALE 0
-#define MY_SCALER 0
-#define MULTI_THREAD_SCALE 0
+#define NET_SCALER 0
+#define MULTI_THREADS_SCALE 0
 #define THREAD_NUMS 3
 #define ARM_NEON_SCALE 1
 

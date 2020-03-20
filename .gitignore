@@ -2,4 +2,6 @@
 build
 obj
 bin
-test
+images
+video
+lib
