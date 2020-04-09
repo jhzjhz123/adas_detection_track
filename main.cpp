@@ -353,7 +353,7 @@ void test_all(int argc, char* argv[]){
     std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/0408/yolo_params_hasco-6.json";
     YoLoProcess yolo_processor(params_file.c_str());
     
-    std::string config_file = "tracktion/config/offline_parameters.xml";
+    std::string config_file = "tracktion/config/tj_e950.xml";
 
 #ifdef DISTANCEMEASURE
     ObjectEstimation Obj_Esti(fx, fy, cx, cy , k1, k2, p1, p2, k3, pitch, yaw, roll, Cam2Chamber, Cam2Center, CamHeight);
