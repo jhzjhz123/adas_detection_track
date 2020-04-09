@@ -674,6 +674,7 @@ void test_lane(int argc, char* argv[]){
     std::cout << "average time of PostProcess: " << fixed << setprecision(3) <<  amount4/images.size() << "ms" << std::endl;
 }
 
+// need to add -L$(MODEL_DIR)/lane/new/1210 -ldpumodelmobilenetv2_seg -L/opt/petalinux/2018.2/sysroots/aarch64-xilinx-linux/usr/lib -ldpsegmentation      in Makefile
 // #include <xilinx/segmentation/segmentation.hpp>
 // #include <iostream>
 // #include <memory>
