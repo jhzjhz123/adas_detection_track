@@ -12,7 +12,7 @@
 #ifdef TIME_COUNT
 #include <chrono>
 #endif
-#define AISDK_INTERFACE
+#define USE_FPGA_PLANE
 // #define DEBUG_INFO
 
 class errMsg
@@ -36,7 +36,7 @@ cv::Mat image_add(cv::Mat image, cv::Mat image_add1, cv::Mat image_add2, float f
 
 void ListImagesPaths(std::string const &path, std::vector<std::string> &images);
 
-#ifdef AISDK_INTERFACE
+#ifdef USE_FPGA_PLANE
 #else
 float* get_hog_feature(cv::Mat img, cv::Point2f center_point);
 #endif

@@ -65,7 +65,7 @@ ObjectEstimation::~ObjectEstimation(){
     delete this->IDDistribute;
 }
 
-#ifdef AISDK_INTERFACE
+#ifdef USE_FPGA_PLANE
 /**
  * @brief transform result from postprocess to tracking
  * @param dets - detections from network
@@ -493,7 +493,7 @@ void ObjectEstimation::drawdetect(Mat &image, map<int, DETECTIONS> d, const std:
 
     cv::Mat img = image_add(image, imgworld, imgego, 1);
 
-    #ifdef AISDK_INTERFACE
+    #ifdef USE_FPGA_PLANE
     #else
     cv::imshow("frame", img);
     cv::waitKey(1);

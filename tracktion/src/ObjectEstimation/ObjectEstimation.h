@@ -17,7 +17,7 @@
 #include "trajectory.h"
 #include "TTC.h"
 
-#ifdef AISDK_INTERFACE
+#ifdef USE_FPGA_PLANE
 #else
 #include"darknet.h"
 #endif
@@ -47,7 +47,7 @@ public:
 
     ~ObjectEstimation();
     
-#ifdef AISDK_INTERFACE
+#ifdef USE_FPGA_PLANE
     /**
      * @brief get yolov3 detect result on FPGA plane
      * @param dets - detect result from network

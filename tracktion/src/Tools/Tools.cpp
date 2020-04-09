@@ -110,7 +110,7 @@ void ListImagesPaths(std::string const &path, std::vector<std::string> &images) 
     closedir(dir);
 }
 
-#ifdef AISDK_INTERFACE
+#ifdef USE_FPGA_PLANE
 #else
 float* get_hog_feature(cv::Mat img, cv::Point2f center_point)
 {

@@ -20,7 +20,7 @@ VPATH     = $(CUR_DIR) \
 # CXX := /opt/petalinux/2018.2/sysroots/x86_64-petalinux-linux/usr/bin/aarch64-xilinx-linux/aarch64-xilinx-linux-g++
 # CC  := /opt/petalinux/2018.2/sysroots/x86_64-petalinux-linux/usr/bin/aarch64-xilinx-linux/aarch64-xilinx-linux-gcc
 
-CFLAGS   :=   -std=c++11 -O3 -Wall -Wpointer-arith -ffast-math -DAISDK_INTERFACE
+CFLAGS   :=   -std=c++11 -O3 -Wall -Wpointer-arith -ffast-math
 
 ARCH      =   $(shell uname -m | sed -e s/arm.*/armv71/ -e s/aarch64.*/aarch64/ )
 ifeq ($(ARCH),armv71)
@@ -139,7 +139,7 @@ clean:
 # # CC  := gcc
 # # CXX := /opt/petalinux/2018.2/sysroots/x86_64-petalinux-linux/usr/bin/aarch64-xilinx-linux/aarch64-xilinx-linux-g++
 # # CC  := /opt/petalinux/2018.2/sysroots/x86_64-petalinux-linux/usr/bin/aarch64-xilinx-linux/aarch64-xilinx-linux-gcc
-# CFLAGS   :=   -std=c++11 -O3 -Wall -Wpointer-arith -ffast-math -DAISDK_INTERFACE
+# CFLAGS   :=   -std=c++11 -O3 -Wall -Wpointer-arith -ffast-math
 
 # ARCH      =   $(shell uname -m | sed -e s/arm.*/armv71/ -e s/aarch64.*/aarch64/ )
 # ifeq ($(ARCH),armv71)
