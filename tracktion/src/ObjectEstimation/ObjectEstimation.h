@@ -11,6 +11,7 @@
 #include <opencv2/highgui.hpp>
 #include "Calibration/Calibrater.h"
 #include "dataType.h"
+#include "Tools.h"
 #include "DistanceMeasure.h"
 #include "Object.h"
 #include "trajectory.h"
@@ -30,7 +31,7 @@ class Track;
 class tracker;
 class IDDistributor;
 class TTC;
-class Calibrater;
+class HRYTCalibrater;
 
 class ObjectEstimation: public object
 {
@@ -47,9 +48,19 @@ public:
     ~ObjectEstimation();
     
 #ifdef AISDK_INTERFACE
-    std::map<int,DETECTIONS> getdetections(const std::vector<std::vector<float>>& dets, const cv::Mat& frame, const int& frame_idx);
+    /**
+     * @brief get yolov3 detect result on FPGA plane
+     * @param dets - detect result from network
+     * @param width - frame width
+     * @param height -frame height
+     * @param frame_idx -frame index
+    */
+    std::map<int,DETECTIONS> getdetections(const std::vector<std::vector<float>>& dets, const int& width, const int& height, const int& frame_idx);
 #else
-    std::map<int,DETECTIONS> getdetections(const detection_with_class* dets,  const int& num, const cv::Mat& frame, const int& frame_idx);
+    /** 
+     * @brief as before, but for darknet GPU plane
+    */
+    std::map<int,DETECTIONS> getdetections(const detection_with_class* dets,  const int& num, const int& width, const int& height, const int& frame_idx);
 #endif
 
     objects UpdateAll(map<int, DETECTIONS> d, const std::map<int, Point2f>& W, const cv::Point2f CamVelocity);
@@ -70,7 +81,7 @@ public:
     void draw_image(const objects &objs, Mat& image);
     void draw_ground(const objects &objs, Mat& image);
     void draw_ego(const std::map<int, Point2f>& W, cv::Mat &imgego);
-    void draw_Calibrater(cv::Mat &img, const Calibrater &cali);
+    void draw_Calibrater(cv::Mat &img, const HRYTCalibrater &cali);
     template<typename Tobj>
     void draw_image_per_class(Mat &image, const Tobj obj, const std::string name);
     template<typename Tobj>
@@ -90,7 +101,7 @@ private:
     int frame_num_saved;
 
     DistanceMeasure dism;
-    Calibrater cali;
+    HRYTCalibrater cali;
     
     tracker **trackers;
     IDDistributor *IDDistribute;

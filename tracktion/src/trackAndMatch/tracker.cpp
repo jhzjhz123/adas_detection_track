@@ -34,7 +34,7 @@ void tracker::predict(){
         track.PredictTrack();
 }
 
-void tracker::update(const DETECTIONS &detections, IDDistributor* IDdis, int index, const Calibrater cali, const object::TransferType worldtype)
+void tracker::update(const DETECTIONS &detections, IDDistributor* IDdis, int index, const HRYTCalibrater cali, const object::TransferType worldtype)
 {
     // 一、进行检测结果和跟踪结果的匹配
     TRACHER_MATCHD res;

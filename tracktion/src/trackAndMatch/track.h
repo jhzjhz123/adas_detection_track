@@ -76,7 +76,7 @@ public:
 
     void PredictTrack();
     
-    void UpdateTrack(const DETECTION_ROW& detection, const Calibrater cali, const object::TransferType &worldtype);
+    void UpdateTrack(const DETECTION_ROW& detection, const HRYTCalibrater cali, const object::TransferType &worldtype);
 
     void mark_missed();
 
@@ -145,7 +145,7 @@ private:
      * @param cali - calibrator
      * @return world coordinate with x,y,w,h
     */
-    cv::Rect2f PredictDistance(const object::TransferType &w, const Calibrater &cali);
+    cv::Rect2f PredictDistance(const object::TransferType &w, const HRYTCalibrater &cali);
 
     /**
      * @brief world coordinate initiation

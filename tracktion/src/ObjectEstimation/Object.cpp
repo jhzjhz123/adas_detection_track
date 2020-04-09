@@ -93,7 +93,7 @@ void object::filter_world(cv::Rect2f &world){
 }
 #else
 
-// void object::update(const RESULT_DATA det, Calibrater cali,
+// void object::update(const RESULT_DATA det, HRYTCalibrater cali,
 //                         DistanceMeasure::TransferType worldtype, int frame_id){
 //     id = det.first;
 //     DETECTBOX detbox = det.second;
@@ -125,7 +125,7 @@ void object::filter_world(cv::Rect2f &world){
 //     this->filter_world(world);
 // }
 
-cv::Rect2f object::pixel2worldpixelonly(const Calibrater cali){
+cv::Rect2f object::pixel2worldpixelonly(const HRYTCalibrater cali){
     cv::Point2f midbottom = this->midbottom();
     cv::Point2f w;
     cali.PixelPointToHRYTGroundPointOffline(midbottom,w);
@@ -136,7 +136,7 @@ cv::Rect2f object::pixel2worldpixelonly(const Calibrater cali){
     return WorldBox;
 }
 
-cv::Rect2f object::pixel2worldwidthheight(const Calibrater cali){
+cv::Rect2f object::pixel2worldwidthheight(const HRYTCalibrater cali){
     cv::Point2f left = this->leftbottom();
     cv::Point2f right = this->rightbottom();
     cv::Point2f bottom = this->midbottom();
@@ -157,7 +157,7 @@ cv::Rect2f object::pixel2worldwidthheight(const Calibrater cali){
     return w;            
 }
 
-cv::Rect2f object::pixel2worldwidthlength(const Calibrater cali){
+cv::Rect2f object::pixel2worldwidthlength(const HRYTCalibrater cali){
     cv::Point2f midtopw, midbottomw, leftw, rightw;
     cv::Point2f midtop = this->midtop();
     cv::Point2f midbottom = this->midbottom();

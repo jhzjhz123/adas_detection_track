@@ -121,15 +121,7 @@ TRACHER_MATCHD linear_assignment::min_cost_matching(tracker *tracker_ptr,
     //cout << "cost_matrix : " << cost_matrix << endl;
 
     // b. 把经由max_distance处理之后的cost_matric作为匈牙利算法的输入，得到线性匹配结果
-    #ifdef TIME_COUNT
-    auto pre_in_time = chrono::system_clock::now();
-    #endif
     Eigen::Matrix<float, -1, 2, Eigen::RowMajor> indices = hungarian.solve(cost_matrix);
-    #ifdef TIME_COUNT
-    auto pre_out_time = chrono::system_clock::now();
-    auto pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
-    std::cout << "hungarian.solve spend:    " << fixed << setprecision(3) <<  pre_duration/1000.0  << "ms" << std::endl;
-    #endif
     //cout << "indices : " << indices << endl ;
 
     // c. 对于匹配结果进行筛选，删去两者差别(即cosine distance)太大的，得到当前level的匹配结果

@@ -347,8 +347,10 @@ float maxTireAngle = 29.6;
 
 float maxStirAngle = 540;
 
-void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
+void test_all(int argc, char* argv[]){
+    #define VIDEO_TEST 0
+
+    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/0408/yolo_params_hasco-6.json";
     YoLoProcess yolo_processor(params_file.c_str());
     
     std::string config_file = "tracktion/config/offline_parameters.xml";
@@ -365,23 +367,46 @@ void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
 
 	DrivingPathEstimation driving_path_estimatin(L, K, maxTireAngle, maxStirAngle);
 
-    int step = 1;
-    cv::Mat frame, frame_track;
+    int frameIdx = 1;
+    cv::Mat frame;
     std::map<int, Point2f> W;
     cv::Point2f CamVelocity;
 
-    while (cap.read(frame))
-    {
-        step++;
+    #if VIDEO_TEST
+    std::string Video_Input = argc==3 ? argv[2] : "video/20191231/tianjin/test_1.ts";
+
+    cv::VideoCapture cap(Video_Input);
+    if (!cap.isOpened())
+        std::cout <<"cap is not open ..." << endl;
+
+    while (cap.read(frame)){
+
+    #else
+
+    string basePath = "video/20191231/tianjin/";
+    vector<string> images;
+    ListImagesPaths(basePath, images);
+    if (images.size() == 0) {
+        cerr << "\nError: Not images exists in "<< basePath << endl;
+    }
+    for(auto image_name:images){
+        cout << "\nimage: " << basePath + image_name << endl;
+        frame = cv::imread(basePath + image_name);
+
+    #endif
+
+        frameIdx++;
+        int width = frame.cols;
+        int height = frame.rows;
         /******trajectory tracking******/
         #ifdef TIME_COUNT
         auto pre_in_time = chrono::system_clock::now();
         #endif
-        if(step > 10)
+        if(frameIdx > 10)
         {
         	float Velocity, StirAngle;
 		    GetInputData(inputfile, Velocity, StirAngle, AngleOffset);
-		    driving_path_estimatin.UpdateCurrentData(Velocity, StirAngle, step);
+		    driving_path_estimatin.UpdateCurrentData(Velocity, StirAngle, frameIdx);
 		    W = driving_path_estimatin.UpdateCurrentTrajectory();
             CamVelocity = driving_path_estimatin.CamVelocity();
         }
@@ -407,8 +432,7 @@ void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
         #ifdef TIME_COUNT
         pre_in_time = chrono::system_clock::now();
         #endif
-        frame_track = frame.clone();
-        std::map<int, DETECTIONS> res = Obj_Esti.getdetections(yolo_result, frame, step);
+        std::map<int, DETECTIONS> res = Obj_Esti.getdetections(yolo_result, width, height, frameIdx);
         #ifdef TIME_COUNT
         pre_out_time = chrono::system_clock::now();
         pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
@@ -435,22 +459,17 @@ void AllInOneThread(VideoCapture cap, int argc, char* argv[]){
         pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
         std::cout << "drawdetect spend:    " << fixed << setprecision(3) <<  pre_duration/1000.0  << "ms" << std::endl << std::endl;
         #endif
+
+        #if VIDEO_TEST
+        #else
+        cv::imwrite("images/results/test_all_" + std::to_string(frameIdx) + ".jpg", frame);
+        #endif
     }
 }
 
-void test_obj_all(int argc, char* argv[]){
-    std::string Video_Input = argc==3 ? argv[2] : "video/20191231/tianjin/test_1.ts";
-
-    cv::VideoCapture cap(Video_Input);
-    if (!cap.isOpened())
-        std::cout <<"cap is not open ..." << endl;
-
-    std::thread AllFrame(AllInOneThread, std::ref(cap), std::ref(argc), std::ref(argv));
-    AllFrame.join();
-}
-
 void test_yolo(int argc, char* argv[]){
-    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/1219/yolo_params_hasco-6.json";
+    #define IMWRITE_RESULT 1
+    std::string params_file = argc==2 ? argv[1] : "detection/model/yolov3/hasco-6/0408/yolo_params_hasco-6.json";
     string basePath;
     #if(YUV420OPEN)
 	    basePath = "images/yuv/";
@@ -465,6 +484,9 @@ void test_yolo(int argc, char* argv[]){
 
     YoLoProcess yolo_processor(params_file.c_str());
     cv::Mat img;
+    #if IMWRITE_RESULT
+    cv::Mat img_post;
+    #endif
     std::vector<std::vector<float>> yolo_result;
     unsigned long time1, time2;
     double amount1 = 0.0, amount2 = 0.0, amount3 = 0.0, amount4 = 0.0;
@@ -486,6 +508,9 @@ void test_yolo(int argc, char* argv[]){
         }
         #else
         img = cv::imread(basePath + image_name);
+        #if IMWRITE_RESULT
+        img_post = img.clone();
+        #endif
         #endif
 
         auto pre_in_time = chrono::system_clock::now();
@@ -501,18 +526,22 @@ void test_yolo(int argc, char* argv[]){
         std::cout << "GetResult spend:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
         amount3 += ((time2 - time1)/1000.0);  
 
+        #if IMWRITE_RESULT
         time1 = get_current_time();
-        yolo_processor.PostProcess(image_name);
+        yolo_processor.PostProcess(image_name, img_post);
         time2 = get_current_time();
         std::cout << "PostProcess spend:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
         amount4 += ((time2 - time1)/1000.0); 
+        #endif
     }
     std::cout << std::endl;
     std::cout << "total images: " << images.size() << std::endl;
     std::cout << "average time of yuv2rgb:     " << fixed << setprecision(3) <<  amount1/images.size() << "ms" << std::endl;
     std::cout << "average time of PreProcess:  " << fixed << setprecision(3) <<  amount2/images.size() << "ms" << std::endl;
     std::cout << "average time of GetResult:   " << fixed << setprecision(3) <<  amount3/images.size() << "ms" << std::endl;
+    #if IMWRITE_RESULT
     std::cout << "average time of PostProcess: " << fixed << setprecision(3) <<  amount4/images.size() << "ms" << std::endl;
+    #endif
 }
 
 void test_envlight(int argc, char* argv[]){
@@ -666,7 +695,7 @@ int main(int argc, char* argv[])
     cout << "'0' : test_yolo;"     << endl;
     cout << "'1' : test_envlight;" << endl;
     cout << "'2' : test_lane;"     << endl;
-    cout << "'3' : test_obj_all;"  << endl;
+    cout << "'3' : test_all;"  << endl;
     cout << "'4' : test_ldw_image;"<< endl;
     cout << "'5' : test_ldw_video;"<< endl;
     // cout << "'6':test_segmentation;" << endl;
@@ -677,7 +706,7 @@ int main(int argc, char* argv[])
         case 0: test_yolo(argc, argv);     break;
         case 1: test_envlight(argc, argv); break;
         case 2: test_lane(argc, argv);     break;
-        case 3: test_obj_all(argc, argv);  break;
+        case 3: test_all(argc, argv);  break;
         case 4: test_ldw_image(argc, argv);break;
         case 5: test_ldw_video(argc, argv);break;
         // case 6: test_segmentation(argc, argv);

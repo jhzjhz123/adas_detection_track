@@ -50,9 +50,9 @@ protected:
     cv::Rect2f pixel2worldwidthheight(DistanceMeasure distancemeasure);
     cv::Rect2f pixel2worldwidthlength(DistanceMeasure distancemeasure);
 #else
-    cv::Rect2f pixel2worldpixelonly(const Calibrater cali);
-    cv::Rect2f pixel2worldwidthheight(const Calibrater cali);
-    cv::Rect2f pixel2worldwidthlength(const Calibrater cali);
+    cv::Rect2f pixel2worldpixelonly(const HRYTCalibrater cali);
+    cv::Rect2f pixel2worldwidthheight(const HRYTCalibrater cali);
+    cv::Rect2f pixel2worldwidthlength(const HRYTCalibrater cali);
 #endif
 
     //void filter_world(cv::Rect2f &world);
@@ -71,7 +71,7 @@ public:
 #ifdef DISTANCEMEASURE
     void update(const RESULT_DATA det, DistanceMeasure dism, DistanceMeasure::TransferType worldtype, int frameindex);
 #else
-    //void update(const RESULT_DATA det, Calibrater cali, DistanceMeasure::TransferType worldtype, int frame_id);
+    //void update(const RESULT_DATA det, HRYTCalibrater cali, DistanceMeasure::TransferType worldtype, int frame_id);
 #endif
 
     void ttc_update(const ObjectTTC obj_ttc){

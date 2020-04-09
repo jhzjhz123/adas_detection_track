@@ -45,7 +45,7 @@ ObjectEstimation::ObjectEstimation(const std::string &config_file):
     a_threshold(7.5), 
     r_threshold(0.65){
 
-    cali.load_offline_parameters(config_file);
+    cali.LoadCameraParametersFile(config_file);
 
     this->trackers = new tracker*[clname.size()];
     for (unsigned int i = 0; i < clname.size(); i++)
@@ -72,10 +72,8 @@ ObjectEstimation::~ObjectEstimation(){
  * @param width - frame width
  * @param height -frame height
 */
-std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::vector<float>>& dets, const cv::Mat& frame, const int& frame_idx){
+std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::vector<float>>& dets, const int& width, const int& height, const int& frame_idx){
     this->frameID = frame_idx;
-    int width = frame.cols;
-    int height = frame.rows;
     map<int, DETECTIONS> vecdets;
     for (unsigned int j = 0; j < clname.size(); j++)
     {
@@ -106,7 +104,6 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::
             {
                 h = height-y;
             }
-            DETECTBOX box(x,y,w, h);
 
             float conf = dets[i][5];
 
@@ -122,7 +119,7 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::
 
             DETECTION_ROW tempRow;
             tempRow.cls = cl;
-            tempRow.tlwh = box;
+            tempRow.tlwh = DETECTBOX(x,y,w, h);
             tempRow.confidence = conf;
             #ifdef USE_FEATURE
             tempRow.feature = FEATURE(feature); // FEATURE(get_hog_feature(frame(cv::Rect(ltx, lty, w, h)), cv::Point2f(x, y))); //or nothing can setZero()
@@ -146,10 +143,8 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::
     return vecdets;
 }
 #else
-std::map<int,DETECTIONS> ObjectEstimation::getdetections(const detection_with_class* dets,  const int& num, const cv::Mat& frame, const int& frame_idx){
+std::map<int,DETECTIONS> ObjectEstimation::getdetections(const detection_with_class* dets,  const int& num, const int& width, const int& height, const int& frame_idx){
     this->frameID = frame_idx;
-    int width = frame.cols;
-    int height = frame.rows;
     map<int, DETECTIONS> vecdets;
     for (unsigned int j = 0; j < clname.size(); j++)
     {
@@ -184,7 +179,6 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const detection_with_cl
             {
                 h = height-lty;
             }
-            DETECTBOX box(ltx,lty,w, h);
 
             float conf = 0.f;
 
@@ -202,7 +196,7 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const detection_with_cl
 
             DETECTION_ROW tempRow;
             tempRow.cls = cl;
-            tempRow.tlwh = box;
+            tempRow.tlwh = DETECTBOX(ltx,lty,w, h);
             tempRow.confidence = conf;
             #ifdef USE_FEATURE
             tempRow.feature = FEATURE(feature); // FEATURE(get_hog_feature(frame(cv::Rect(ltx, lty, w, h)), cv::Point2f(x, y)));//or nothing can setZero()
@@ -499,8 +493,11 @@ void ObjectEstimation::drawdetect(Mat &image, map<int, DETECTIONS> d, const std:
 
     cv::Mat img = image_add(image, imgworld, imgego, 1);
 
+    #ifdef AISDK_INTERFACE
+    #else
     cv::imshow("frame", img);
     cv::waitKey(1);
+    #endif
     
     // char image_name[100];  //保存路径
     // sprintf(image_name, "%s%d%s", "test/images/results", this->frame_id, ".jpg");   //指定保存路径
@@ -575,7 +572,7 @@ void ObjectEstimation::draw_ego(const std::map<int, Point2f>& W, cv::Mat &imgego
 	//waitKey(30);
 }
 
-void ObjectEstimation::draw_Calibrater(cv::Mat &img, const Calibrater &cali){
+void ObjectEstimation::draw_Calibrater(cv::Mat &img, const HRYTCalibrater &cali){
     cv::Point2f p1,p2,pw;
 
     for(int i=10; i<=200;i+=20){

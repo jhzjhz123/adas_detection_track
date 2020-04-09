@@ -38,7 +38,7 @@ public:
     // Propagate track state distributions one time step forward. This function should be called once every time step, before `update`.
     void predict();
     // Perform measurement update and track management
-    void update(const DETECTIONS& detections, IDDistributor* IDdis, int index, const Calibrater cali, const object::TransferType worldtype);
+    void update(const DETECTIONS& detections, IDDistributor* IDdis, int index, const HRYTCalibrater cali, const object::TransferType worldtype);
 
     // https://www.cnblogs.com/zhubaohua-bupt/p/7182803.html
     typedef DYNAMICM (tracker::* GATED_METRIC_FUNC)(std::vector<Track>& tracks, const DETECTIONS& dets, const std::vector<int>& track_indices, const std::vector<int>& detection_indices);

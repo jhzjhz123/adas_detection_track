@@ -78,6 +78,38 @@ cv::Mat image_add(cv::Mat image, cv::Mat image_add1, cv::Mat image_add2, float f
     return img;
 }
 
+void ListImagesPaths(std::string const &path, std::vector<std::string> &images) {
+    images.clear();
+    struct dirent *entry;
+
+    /*Check if path is a valid directory path. */
+    struct stat s;
+    lstat(path.c_str(), &s);
+    if (!S_ISDIR(s.st_mode)) {
+        fprintf(stderr, "Error: %s is not a valid directory!\n", path.c_str());
+        exit(1);
+    }
+
+    DIR *dir = opendir(path.c_str());
+    if (dir == nullptr) {
+        fprintf(stderr, "Error: Open %s path failed.\n", path.c_str());
+        exit(1);
+    }
+
+    while ((entry = readdir(dir)) != nullptr) {
+        if (entry->d_type == DT_REG || entry->d_type == DT_UNKNOWN) {
+            std::string name = entry->d_name;
+            std::string ext = name.substr(name.find_last_of(".") + 1);
+            if ((ext == "JPEG") || (ext == "jpeg") || (ext == "JPG") ||
+                (ext == "jpg") || (ext == "PNG") || (ext == "png") || (ext == "420")) {
+                images.push_back(name);
+            }
+        }
+    }
+
+    closedir(dir);
+}
+
 #ifdef AISDK_INTERFACE
 #else
 float* get_hog_feature(cv::Mat img, cv::Point2f center_point)

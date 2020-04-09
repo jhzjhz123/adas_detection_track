@@ -1,0 +1,9 @@
+{
+    "elf_model_name": "scnnseg",
+    "crop_size_left_top_x": 0,
+    "crop_size_left_top_y": 180,
+    "crop_size_width": 1280,
+    "crop_size_height": 540,
+    "input_node": "lanenet_loss_inference_encode_conv1_1_conv_Conv2D",
+    "output_node": ["lanenet_loss_inference_encode_conv_7_Conv2D", "lanenet_loss_inference_encode_Classification_dense_MatMul"]
+}

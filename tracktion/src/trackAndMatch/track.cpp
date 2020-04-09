@@ -100,7 +100,7 @@ void Track::PredictTrack(){
     this->_time_since_update += 1; // 预测完成以后，需要对每一个tracker的_time_since_update加1,。
 }
 
-cv::Rect2f Track::PredictDistance(const object::TransferType &w, const Calibrater &cali){
+cv::Rect2f Track::PredictDistance(const object::TransferType &w, const HRYTCalibrater &cali){
     cv::Rect2f worldcoordinate;
     switch (w)
     {
@@ -155,7 +155,7 @@ void Track::WorldCoordinateCorrect(cv::KalmanFilter *kalman, const Mat &measurem
 }
 
 
-void Track::UpdateTrack(const DETECTION_ROW& detection, const Calibrater cali, const object::TransferType &worldtype){
+void Track::UpdateTrack(const DETECTION_ROW& detection, const HRYTCalibrater cali, const object::TransferType &worldtype){
     /*
     更新包括以下几个参数：
     a. 更新kalman滤波的一系列运动变量、命中次数以及重置_time_since_update;

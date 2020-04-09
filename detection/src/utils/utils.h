@@ -18,7 +18,6 @@
 #include <future>
 #include <arm_neon.h>
 
-// #define USE_RESIZE
 // #define DEBUG_INFO
 // #define TIME_COUNT
 

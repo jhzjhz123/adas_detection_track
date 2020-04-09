@@ -35,7 +35,8 @@ void YoLoProcess::PreProcess(cv::Mat& img){
     #ifdef DEBUG_INFO
     std::cout << "img.size(): " << img.size() << std::endl;
     #endif
-    img_post = img.clone();
+    height0 = img.rows;
+    width0 = img.cols;
     img_init = img;
     setInputImageForYOLO();
 }
@@ -96,7 +97,7 @@ std::vector<std::vector<float>> YoLoProcess::GetResult(){
     return final_results;
 }
 
-void YoLoProcess::PostProcess(std::string imagename){
+void YoLoProcess::PostProcess(const std::string& imagename, cv::Mat& img_post){
     std::ofstream fout("images/results/" + imagename.substr(0, imagename.length() - 4) + "_"  + medstr + ".txt");
     std::ofstream box_file("images/results/boxcount_" + medstr + ".txt", ios::app);
 
@@ -248,6 +249,9 @@ void YoLoProcess::setInputImageForYOLO() {
     std::cout << "crop:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
     #endif
 
+    if(yolo_params.crop_size_height == 720){
+        #define USE_RESIZE
+    }
     #ifdef USE_RESIZE
     #ifdef TIME_COUNT
     time1 = get_current_time();
@@ -489,15 +493,18 @@ void YoLoProcess::setInputImageForYOLO() {
     //     uint16x4_t  regin16_high  = vget_high_u16(regin16);              // DUP Vd.1D,Vn.D[1]    
 
     //     uint32x4_t  regin32_low   = vmovl_u16(regin16_low);              // 宽指令，将16位扩展为32位 USHLL Vd.4S,Vn.4H,#0
-    //     float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low);          // 将int转换为float UCVTF Vd.4S,Vn.4S
-    //     float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);        //  FMUL Vd.4S,Vn.4S,Vm.S[0]
-    //     uint32x4_t  res32_low     = vcvtq_u32_f32(res32f_low);           // 将float转换为int FCVTZU Vd.4S,Vn.4S
-    //     uint16x4_t  res16_low     = vqmovn_u32(res32_low);               // 窄指令，32位变为16位 UQXTN Vd.4H,Vn.4S
-
     //     uint32x4_t  regin32_high  = vmovl_u16(regin16_high);             // USHLL Vd.4S,Vn.4H,#0
+
+    //     float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low);          // 将int转换为float UCVTF Vd.4S,Vn.4S
     //     float32x4_t regin32f_high = vcvtq_f32_u32(regin32_high);         // UCVTF Vd.4S,Vn.4S
+
+    //     float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);        //  FMUL Vd.4S,Vn.4S,Vm.S[0]
     //     float32x4_t res32f_high   = vmulq_n_f32(regin32f_high, s);       // FMUL Vd.4S,Vn.4S,Vm.S[0]
+
+    //     uint32x4_t  res32_low     = vcvtq_u32_f32(res32f_low);           // 将float转换为int FCVTZU Vd.4S,Vn.4S
     //     uint32x4_t  res32_high    = vcvtq_u32_f32(res32f_high);          // FCVTZU Vd.4S,Vn.4S
+
+    //     uint16x4_t  res16_low     = vqmovn_u32(res32_low);               // 窄指令，32位变为16位 UQXTN Vd.4H,Vn.4S
     //     uint16x4_t  res16_high    = vqmovn_u32(res32_high);              // UQXTN Vd.4H,Vn.4S
 
     //     uint16x8_t  res16         = vcombine_u16(res16_low, res16_high); // DUP Vd.1D,Vn.D[0]    INS Vd.D[1],Vm.D[0]
@@ -523,11 +530,12 @@ void YoLoProcess::setInputImageForYOLO() {
     //     "ushll v0.8h,v0.8b,#0         \n\t"
 
     //     "dup d1, v0.d[0]              \n\t"
-    //     "ushll v1.4s,v1.4h,#0         \n\t"
-    //     "ucvtf v1.4s, v1.4s           \n\t"
-        
     //     "dup d0, v0.d[1]              \n\t"
+
+    //     "ushll v1.4s,v1.4h,#0         \n\t"
     //     "ushll v0.4s, v0.4h,#0        \n\t"
+
+    //     "ucvtf v1.4s, v1.4s           \n\t"    
     //     "ucvtf v0.4s, v0.4s           \n\t"
 
     //     "fmul v1.4s, v1.4s, v3.4s     \n\t"
@@ -568,15 +576,18 @@ void YoLoProcess::setInputImageForYOLO() {
         uint16x4_t  regin16_high  = vget_high_u16(regin16);
 
         uint32x4_t  regin32_low   = vmovl_u16(regin16_low);     // 宽指令，将16位扩展为32位
-        float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low); // 将int转换为float
-        float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);
-        int32x4_t   res32_low     = vcvtq_s32_f32(res32f_low);  // 将float转换为int
-        int16x4_t   res16_low     = vqmovn_s32(res32_low);      // 窄指令，32位变为16位
-
         uint32x4_t  regin32_high  = vmovl_u16(regin16_high);
+
+        float32x4_t regin32f_low  = vcvtq_f32_u32(regin32_low); // 将int转换为float
         float32x4_t regin32f_high = vcvtq_f32_u32(regin32_high);
+
+        float32x4_t res32f_low    = vmulq_n_f32(regin32f_low, s);
         float32x4_t res32f_high   = vmulq_n_f32(regin32f_high, s);
+
+        int32x4_t   res32_low     = vcvtq_s32_f32(res32f_low);  // 将float转换为int
         int32x4_t   res32_high    = vcvtq_s32_f32(res32f_high);
+
+        int16x4_t   res16_low     = vqmovn_s32(res32_low);      // 窄指令，32位变为16位
         int16x4_t   res16_high    = vqmovn_s32(res32_high);
 
         int16x8_t   res16         = vcombine_s16(res16_low, res16_high);
@@ -588,7 +599,7 @@ void YoLoProcess::setInputImageForYOLO() {
         input_data[i] = img_input.data[i] * s;
     }
 
-    // // method5-neon assembly7.9ms
+    // // method5-neon assembly7.2ms
     // float s = input_scale/255.f;
     // int i = 0;
     // int cnt = input_size - (input_size & 7);
@@ -600,11 +611,12 @@ void YoLoProcess::setInputImageForYOLO() {
     //     "ushll v0.8h, v0.8b, #0   \n\t"
 
     //     "dup d1, v0.d[0]          \n\t"
-    //     "ushll v1.4s, v1.4h, #0   \n\t"
-    //     "ucvtf v1.4s, v1.4s       \n\t"
-
     //     "dup d0, v0.d[1]          \n\t"
+        
+    //     "ushll v1.4s, v1.4h, #0   \n\t"
     //     "ushll v0.4s, v0.4h, #0   \n\t"
+
+    //     "ucvtf v1.4s, v1.4s       \n\t"
     //     "ucvtf v0.4s, v0.4s       \n\t"
 
     //     "fmul v1.4s, v1.4s, v3.4s \n\t"
@@ -629,7 +641,7 @@ void YoLoProcess::setInputImageForYOLO() {
     //     "bgt 1b          \n\t"
     //     : "=r"(input_data), "=r"(img_input.data), "=r"(s), "=r"(i), "=r"(cnt)
     //     : "0"(input_data), "1"(img_input.data), "2"(s), "3"(i), "4"(cnt)
-    //     : "memory", "cc"
+    //     : "memory", "cc", "v0", "v1", "v2", "d0", "d1", "d2"
     // );
 
     // // method6-neon intrinsic uint8->uint16->float16->做乘法处理->float16->uint16->uint8->int8
@@ -661,6 +673,43 @@ void YoLoProcess::setInputImageForYOLO() {
 
     //     vst1q_s8(input_data + i, out_s8);
     // }
+
+    // // method6-neon assembly
+    // float16_t s = input_scale/255.f;
+    // int i = 0;
+    // int cnt = input_size - (input_size & 15);
+    // __asm__ __volatile__(
+    //     "dup v3.8h, %w2 \n"
+    //     "1: \n"
+        
+    //     "ldr q0, [%1], #16 \n"
+    //     "dup v1.1d, v0.d[0] \n"
+    //     "dup v0.1d, v0.d[1] \n"
+
+    //     "ushll v1.8h, v1.8b, #0 \n"
+    //     "ushll v0.8h, v0.8b, #0 \n"
+
+    //     "ucvtf v1.8h, v1.8h \n"
+    //     "ucvtf v0.8h, v0.8h \n"
+
+    //     "fmul v1.8h, v1.8h, v3.8h \n"
+    //     "fmul v0.8h, v0.8h, v3.8h \n"
+
+    //     "fcvtzs v1.8h, v1.8h \n"
+    //     "fcvtzs v0.8h, v0.8h \n"
+
+    //     "sqxtn v1.8b, v1.8h \n"
+    //     "sqxtn v0.8b, v0.8h \n"
+
+    //     "dup v2.1d, v1.d[0] \n"
+    //     "ins v2.d[1], v0.d[0] \n"
+
+    //     "str q2, [%0], #16 \n"
+
+    //     : "=r"(input_data), "=r"(img_input.data), "=r"(s), "=r"(i), "=r"(cnt)
+    //     : "0"(input_data), "1"(img_input.data), "2"(s), "3"(i), "4"(cnt)
+    //     : "memory", "cc"
+    // );
 
     // // method7 my-neon_norm
     // float s = input_scale/255.f;
@@ -795,8 +844,8 @@ void YoLoProcess::refine(std::vector<std::vector<float>>& nms_results_, std::vec
         float ymax = (nms_results[i][1] + nms_results[i][3]/2.0) * h + 1.0 + yolo_params.crop_size_left_top_y;
         if(xmin < 0) xmin = 0.;
         if(ymin < 0) ymin = 0.;
-        if(xmax > img_post.cols) xmax = img_post.cols;
-        if(ymax > img_post.rows) ymax = img_post.rows;
+        if(xmax > width0) xmax = width0;
+        if(ymax > height0) ymax = height0;
         float obj_w = xmax - xmin;
         float obj_h = ymax - ymin;
 

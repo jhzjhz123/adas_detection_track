@@ -46,7 +46,7 @@ public:
     ~YoLoProcess();
     void PreProcess(cv::Mat& img);
     std::vector<std::vector<float>> GetResult();
-    void PostProcess(std::string imagename);
+    void PostProcess(const std::string& imagename, cv::Mat& img_post);
     std::vector<std::vector<float>> thread_func(cv::Mat& img);
 private:
     void getParams(const char* file_name);
@@ -59,7 +59,8 @@ private:
 
     DPUKernel* yolo_kernel;
     DPUTask* yolo_task;
-    cv::Mat img_init, img_input, img_post;
+    int height0, width0;
+    cv::Mat img_init, img_input;
     
     YOLOInputData yolo_params;
     std::vector<std::string> paramSet = {"elf_model_name",

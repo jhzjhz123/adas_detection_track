@@ -12,7 +12,7 @@
 #define FRAMEFREQUENCY 15
 #define FRAMEFREQUENCY_W 30
 
-//#define USE_FEATURE
+#define USE_FEATURE
 const unsigned int feature_dims = 13; // num_class + 4 if hog 128
 
 typedef Eigen::Matrix<float, 1, 4, Eigen::RowMajor> DETECTBOX;
