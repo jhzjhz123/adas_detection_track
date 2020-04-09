@@ -86,7 +86,7 @@ OBJS     = $(patsubst %.cpp, %.o, $(DIRS))
 	Tools.o hungarian.o KalmanFilterToolBox.o linear_assignment.o nn_matching.o track.o tracker.o \
 	common.o distance_measure.o hv_lane.o kalman.o lane_class.o lane_detect.o lane_tracking.o
 
-all: $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR) $(TARGET) libdetection.so libtracktion.so libldw.so
+all: $(OBJ_DIR) $(BIN_DIR) $(LIB_DIR) $(TARGET) libhvdetection.so libhvtracktion.so libhvldw.so
 
 $(OBJ_DIR) :
 	-mkdir -p $@
@@ -105,16 +105,16 @@ $(TARGET) : $(OBJS)
 	@echo "\nCompiling $@..."
 	$(CXX) $(CFLAGS) $(addprefix $(OBJ_DIR)/, $^) -o $(BIN_DIR)/$@ $(MODEL) $(INCLUDE) $(LIBS)
 
-libdetection.so : $(filter-out Calibrater.o tinyxml2.o hungarian.o KalmanFilterToolBox.o linear_assignment.o nn_matching.o track.o tracker.o \
+libhvdetection.so : $(filter-out Calibrater.o tinyxml2.o hungarian.o KalmanFilterToolBox.o linear_assignment.o nn_matching.o track.o tracker.o \
 	DistanceMeasure.o Object.o ObjectEstimationControl.o TTC.o trajectory.o tools.o main.o, $(OBJS))
 	@echo "\nCompiling $@..."
 	$(CXX) -shared -fPIC $(CFLAGS) $(addprefix $(OBJ_DIR)/, $^) -o $(LIB_DIR)/$@ $(MODEL) $(INCLUDE) $(LIBS)
 
-libtracktion.so : $(filter-out json11.o utils.o yolo.o envlight.o lane.o main.o, $(OBJS))
+libhvtracktion.so : $(filter-out json11.o utils.o yolo.o envlight.o lane.o main.o, $(OBJS))
 	@echo "\nCompiling $@..."
 	$(CXX) -shared -fPIC $(CFLAGS) $(addprefix $(OBJ_DIR)/, $^) -o $(LIB_DIR)/$@ $(INCLUDE) $(LIBS)
 
-libldw.so : $(filter-out Calibrater.o tinyxml2.o hungarian.o KalmanFilterToolBox.o linear_assignment.o nn_matching.o track.o tracker.o \
+libhvldw.so : $(filter-out Calibrater.o tinyxml2.o hungarian.o KalmanFilterToolBox.o linear_assignment.o nn_matching.o track.o tracker.o \
 	DistanceMeasure.o Object.o ObjectEstimationControl.o TTC.o trajectory.o tools.o \
 	json11.o utils.o yolo.o envlight.o lane.o main.o, $(OBJS))
 	@echo "\nCompiling $@..."
@@ -186,9 +186,9 @@ clean:
 # 	-L/home/rongy/Xilinx_AI -ln2cube \
 # 	-L/home/rongy/Xilinx_AI -ldputils \
 # 	-L/opt/petalinux/2018.2/sysroots/aarch64-xilinx-linux/usr/lib -lglog -lopencv_stitching -lopencv_superres -lopencv_videostab -lopencv_aruco -lopencv_bgsegm -lopencv_bioinspired -lopencv_ccalib -lopencv_dpm -lopencv_face -lopencv_photo -lopencv_fuzzy  -lopencv_img_hash -lopencv_line_descriptor -lopencv_optflow -lopencv_reg -lopencv_rgbd -lopencv_saliency -lopencv_stereo -lopencv_structured_light -lopencv_phase_unwrapping -lopencv_surface_matching -lopencv_tracking -lopencv_plot -lopencv_xfeatures2d -lopencv_shape -lopencv_video -lopencv_ml -lopencv_ximgproc -lopencv_calib3d -lopencv_features2d -lopencv_highgui -lopencv_videoio -lopencv_flann -lopencv_xobjdetect -lopencv_imgcodecs -lopencv_objdetect -lopencv_xphoto -lopencv_imgproc -lopencv_core \
-# 	-L$(CUR_DIR)/lib -ldetection \
-# 	-L$(CUR_DIR)/lib -ltracktion \
-# 	-L$(CUR_DIR)/lib -lldw
+# 	-L$(CUR_DIR)/lib -lhvdetection \
+# 	-L$(CUR_DIR)/lib -lhvtracktion \
+# 	-L$(CUR_DIR)/lib -lhvldw
 	
 # # MODEL   +=   $(MODEL_DIR)/yolov3/demo/dpu_hasco.elf
 # MODEL   +=   $(MODEL_DIR)/yolov3/hasco-6/0408/dpu_hasco_6.elf \
