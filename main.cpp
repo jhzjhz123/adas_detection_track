@@ -368,7 +368,7 @@ void test_all(int argc, char* argv[]){
 	DrivingPathEstimation driving_path_estimatin(L, K, maxTireAngle, maxStirAngle);
 
     int frameIdx = 1;
-    cv::Mat frame;
+    cv::Mat frame, frame_croped;
     std::map<int, Point2f> W;
     cv::Point2f CamVelocity;
 
@@ -420,8 +420,15 @@ void test_all(int argc, char* argv[]){
         #ifdef TIME_COUNT
         pre_in_time = chrono::system_clock::now();
         #endif
-        yolo_processor.PreProcess(frame);
+        frame_croped = frame(cv::Rect(0, 208, 1280, 512)).clone();
+        yolo_processor.PreProcess(frame_croped);
         std::vector<std::vector<float>> yolo_result = yolo_processor.GetResult();
+
+        // when you use yolo results without my PostProcess you should do this
+        for(int i = 0; i < yolo_result.size(); ++i){
+            yolo_result[i][1] += 208;
+        }
+
         #ifdef TIME_COUNT
         pre_out_time = chrono::system_clock::now();
         pre_duration = (chrono::duration_cast<chrono::microseconds>(pre_out_time - pre_in_time)).count();
@@ -511,6 +518,7 @@ void test_yolo(int argc, char* argv[]){
         #if IMWRITE_RESULT
         img_post = img.clone();
         #endif
+        img = img(cv::Rect(0, 208, 1280, 512)).clone();
         #endif
 
         auto pre_in_time = chrono::system_clock::now();
@@ -524,7 +532,12 @@ void test_yolo(int argc, char* argv[]){
         yolo_result = yolo_processor.GetResult();
         time2 = get_current_time();
         std::cout << "GetResult spend:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
-        amount3 += ((time2 - time1)/1000.0);  
+        amount3 += ((time2 - time1)/1000.0); 
+
+        // when you use yolo results you should do this
+        // for(int i = 0; i < yolo_result.size(); ++i){
+        //     yolo_result[i][1] += 208;
+        // } 
 
         #if IMWRITE_RESULT
         time1 = get_current_time();

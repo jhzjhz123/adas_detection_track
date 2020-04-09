@@ -24,7 +24,7 @@
         "layer50_conv"
     ],
     "crop_size_left_top_x": 0,
-    "crop_size_left_top_y": 208,
+    "crop_size_left_top_y": 0,
     "crop_size_width": 1280,
     "crop_size_height": 512
 }
