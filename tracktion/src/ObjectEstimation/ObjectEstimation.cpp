@@ -86,8 +86,8 @@ std::map<int,DETECTIONS> ObjectEstimation::getdetections(const std::vector<std::
            
             float x = dets[i][0];
             float y = dets[i][1];
-            float h = dets[i][2];
-            float w = dets[i][3];
+            float w = dets[i][2];
+            float h = dets[i][3];
             if(x < 0)
             {
                 x = 0;

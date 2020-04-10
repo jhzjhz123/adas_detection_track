@@ -103,7 +103,7 @@ void YoLoProcess::PostProcess(const std::string& imagename, cv::Mat& img_post){
 
     for(size_t i = 0; i < final_results.size(); ++i) {
         float xmin = final_results[i][0];
-        float ymin = final_results[i][1] + 208; // where from crop y
+        float ymin = final_results[i][1]; // where from crop y
         float obj_w = final_results[i][2];
         float obj_h = final_results[i][3];
         int cls = final_results[i][4];
@@ -243,7 +243,7 @@ void YoLoProcess::setInputImageForYOLO() {
     #ifdef TIME_COUNT
     time1 = get_current_time();
     #endif
-    img_input = img_init;//(cv::Rect(yolo_params.crop_size_left_top_x, yolo_params.crop_size_left_top_y, yolo_params.crop_size_width, yolo_params.crop_size_height));
+    img_input = img_init(cv::Rect(yolo_params.crop_size_left_top_x, yolo_params.crop_size_left_top_y, yolo_params.crop_size_width, yolo_params.crop_size_height));
     #ifdef TIME_COUNT
     time2 = get_current_time();
     std::cout << "crop:    " << fixed << setprecision(3) <<  (time2 - time1)/1000.0  << "ms" << std::endl;
